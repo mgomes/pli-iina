@@ -10,5 +10,5 @@
   "permissions": ["network-request"],
   "allowedDomains": ["*"],
   "ghRepo": "mgomes/pli-iina",
-  "ghVersion": 1
+  "ghVersion": 2
 }
