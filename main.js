@@ -69,6 +69,12 @@ event.on("iina.file-loaded", function (url) {
   var durationParam = getParam(url, "X-Pli-Duration");
   var durationMs = durationParam ? parseInt(durationParam, 10) : 0;
 
+  var startParam = getParam(url, "X-Pli-Start");
+  var startMs = startParam ? parseInt(startParam, 10) : 0;
+  if (startMs > 0) {
+    core.seek(startMs / 1000);
+  }
+
   startTracking(ratingKey, durationMs, callback);
 });
 
