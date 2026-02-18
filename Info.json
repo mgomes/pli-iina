@@ -1,7 +1,7 @@
 {
   "name": "pli",
   "identifier": "io.pli.iina-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Reports playback progress to pli so Plex tracks watch status.",
   "author": {
     "name": "Mauricio Gomes"
