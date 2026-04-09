@@ -49,7 +49,18 @@ function getParam(url, name) {
 
 function getPlayerContextURL(callback) {
   try {
-    return new URL("player/context", callback).toString();
+    const url = new URL(callback);
+    const pathname = url.pathname || "";
+    if (pathname.endsWith("/timeline")) {
+      url.pathname = pathname.slice(0, -"/timeline".length) + "/player/context";
+    } else {
+      const lastSlash = pathname.lastIndexOf("/");
+      const basePath = lastSlash >= 0 ? pathname.slice(0, lastSlash + 1) : "/";
+      url.pathname = basePath + "player/context";
+    }
+    url.search = "";
+    url.hash = "";
+    return url.toString();
   } catch (_) {
     return null;
   }
