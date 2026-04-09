@@ -20,12 +20,11 @@ function initializeOverlay() {
     return;
   }
 
-  overlayInitialized = true;
-  overlayLoaded = false;
-  overlay.loadFile("overlay.html");
   overlay.setOpacity(1);
   overlay.setClickable(false);
   overlay.hide();
+  overlayLoaded = false;
+  overlay.loadFile("overlay.html");
   overlay.onMessage("action", function (payload) {
     const action = payload && typeof payload === "object" ? payload.action : payload;
     if (action === "skip-intro") {
@@ -40,6 +39,23 @@ function initializeOverlay() {
       playNextEpisode();
     }
   });
+  overlayInitialized = true;
+}
+
+function ensureOverlayInitialized() {
+  if (overlayInitialized) {
+    return true;
+  }
+
+  try {
+    initializeOverlay();
+    return overlayInitialized;
+  } catch (err) {
+    console.log("pli: overlay initialization failed", String(err));
+    overlayInitialized = false;
+    overlayLoaded = false;
+    return false;
+  }
 }
 
 function getParam(url, name) {
@@ -288,6 +304,7 @@ function stopTracking() {
 
 function startTracking(ratingKey, durationMs, callback, startMs, displayTitle) {
   stopTracking();
+  ensureOverlayInitialized();
 
   const contextURL = getPlayerContextURL(callback);
 
@@ -418,7 +435,7 @@ function buildOverlayPayload() {
 }
 
 function updateOverlay() {
-  if (!overlayInitialized || !overlayLoaded) {
+  if (!ensureOverlayInitialized() || !overlayLoaded) {
     return;
   }
 
@@ -486,7 +503,7 @@ function playNextEpisode() {
 }
 
 event.on("iina.window-loaded", function () {
-  initializeOverlay();
+  ensureOverlayInitialized();
   updateOverlay();
 });
 

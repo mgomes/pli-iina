@@ -1,7 +1,7 @@
 {
   "name": "pli",
   "identifier": "io.pli.iina-plugin",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Reports playback progress to pli and shows Plex-aware skip and next controls.",
   "author": {
     "name": "Mauricio Gomes"
@@ -10,5 +10,5 @@
   "permissions": ["network-request", "video-overlay", "show-osd"],
   "allowedDomains": ["*"],
   "ghRepo": "mgomes/pli-iina",
-  "ghVersion": 6
+  "ghVersion": 7
 }
