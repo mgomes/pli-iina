@@ -1,8 +1,8 @@
-const { core, event, http, console, overlay } = iina;
+const { core, event, http, console, overlay, mpv } = iina;
 
 const REPORT_INTERVAL = 10000;
 const OVERLAY_INTERVAL = 500;
-const NEXT_EPISODE_THRESHOLD_MS = 30000;
+const NEXT_EPISODE_THRESHOLD_MS = 90000;
 const RESUME_SEEK_GRACE_MS = 3000;
 
 let session = null;
@@ -13,6 +13,7 @@ let lastOverlayState = "";
 let overlayVisible = false;
 let overlayInitialized = false;
 let overlayLoaded = false;
+let lastDisplayTitle = "";
 
 function initializeOverlay() {
   if (overlayInitialized) {
@@ -142,6 +143,24 @@ function parseHTTPData(response) {
   return null;
 }
 
+function normalizeDisplayTitle(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function setDisplayTitle(title) {
+  const nextTitle = normalizeDisplayTitle(title);
+  if (nextTitle === lastDisplayTitle) {
+    return;
+  }
+
+  lastDisplayTitle = nextTitle;
+  try {
+    mpv.set("force-media-title", nextTitle);
+  } catch (err) {
+    console.log("pli: failed to set display title", String(err));
+  }
+}
+
 function normalizeMarkers(markers) {
   if (!Array.isArray(markers)) return [];
 
@@ -175,6 +194,7 @@ function normalizeNextItem(item) {
 
   return {
     title: typeof item.title === "string" ? item.title : "",
+    displayTitle: normalizeDisplayTitle(item.display_title) || (typeof item.title === "string" ? item.title : ""),
     ratingKey: ratingKey,
     streamURL: item.stream_url,
     durationMs: Number(item.duration_ms || 0),
@@ -263,9 +283,10 @@ function stopTracking() {
     session = null;
     lastPosition = 0;
   }
+  setDisplayTitle("");
 }
 
-function startTracking(ratingKey, durationMs, callback, startMs) {
+function startTracking(ratingKey, durationMs, callback, startMs, displayTitle) {
   stopTracking();
 
   const contextURL = getPlayerContextURL(callback);
@@ -279,8 +300,10 @@ function startTracking(ratingKey, durationMs, callback, startMs) {
     next: null,
     resumePositionMs: startMs > 0 ? startMs : 0,
     resumeRequestedAtMs: startMs > 0 ? Date.now() : 0,
+    displayTitle: normalizeDisplayTitle(displayTitle),
   };
   lastPosition = startMs > 0 ? startMs : 0;
+  setDisplayTitle(session.displayTitle);
 
   report("playing", true);
 
@@ -318,6 +341,8 @@ async function refreshPlayerContext() {
     if (durationMs > 0) {
       session.durationMs = durationMs;
     }
+    session.displayTitle = normalizeDisplayTitle(payload.display_title) || session.displayTitle;
+    setDisplayTitle(session.displayTitle);
     session.markers = normalizeMarkers(payload.markers);
     session.next = normalizeNextItem(payload.next);
     updateOverlay();
@@ -443,6 +468,9 @@ function buildTrackedPlaybackURL(item) {
   if (item.durationMs > 0) {
     updates["X-Pli-Duration"] = item.durationMs;
   }
+  if (item.displayTitle) {
+    updates["X-Pli-Display-Title"] = item.displayTitle;
+  }
 
   return buildURLWithQuery(item.streamURL, updates);
 }
@@ -478,7 +506,8 @@ event.on("iina.file-loaded", function (url) {
 
   const startParam = getParam(url, "X-Pli-Start");
   const startMs = startParam ? parseInt(startParam, 10) : 0;
-  startTracking(ratingKey, durationMs, callback, startMs);
+  const displayTitle = getParam(url, "X-Pli-Display-Title");
+  startTracking(ratingKey, durationMs, callback, startMs, displayTitle);
   if (startMs > 0) {
     core.seek(startMs / 1000);
   }
