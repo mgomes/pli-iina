@@ -56,6 +56,22 @@ This runs:
 
 and creates an installable `.iinaplgz` archive.
 
+## Release
+
+Push a tag in the form `vX.Y.Z` to publish a GitHub release. The release workflow:
+
+1. runs on macOS
+2. checks that the tag matches `Info.json`'s `version`
+3. packs the plugin
+4. uploads the `.iinaplgz` archive to the GitHub release
+
+For example:
+
+```bash
+git tag v1.1.1
+git push origin v1.1.1
+```
+
 ## Install
 
 1. Build (or download) the `.iinaplgz` package.

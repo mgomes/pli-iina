@@ -1,0 +1,52 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Read plugin version
+        id: version
+        run: |
+          info_version="$(python3 - <<'PY'
+          import json
+          with open("Info.json", encoding="utf-8") as f:
+              data = json.load(f)
+          print(data["version"])
+          PY
+          )"
+          tag_version="${GITHUB_REF_NAME#v}"
+
+          if [ "$tag_version" != "$info_version" ]; then
+            echo "::error::Tag version $tag_version does not match Info.json version $info_version"
+            exit 1
+          fi
+
+          echo "plugin_version=$info_version" >> "$GITHUB_OUTPUT"
+
+      - name: Install IINA
+        run: brew install --cask iina
+
+      - name: Pack plugin
+        run: /Applications/IINA.app/Contents/MacOS/iina-plugin pack .
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "pli-iina-${{ steps.version.outputs.plugin_version }}.iinaplgz" \
+            --repo "$GITHUB_REPOSITORY" \
+            --generate-notes \
+            --title "$GITHUB_REF_NAME"
