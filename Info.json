@@ -7,7 +7,7 @@
     "name": "Mauricio Gomes"
   },
   "entry": "main.js",
-  "permissions": ["network-request"],
+  "permissions": ["network-request", "video-overlay", "show-osd"],
   "allowedDomains": ["*"],
   "ghRepo": "mgomes/pli-iina",
   "ghVersion": 2
