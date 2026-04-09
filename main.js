@@ -499,7 +499,8 @@ function playNextEpisode() {
   if (!nextURL) return;
 
   core.osd("Loading next episode");
-  core.open(nextURL);
+  hideOverlay();
+  mpv.command("loadfile", [nextURL, "replace"]);
 }
 
 event.on("iina.window-loaded", function () {
