@@ -23,7 +23,6 @@
         display: flex;
         align-items: flex-end;
         justify-content: flex-end;
-        pointer-events: none;
       }
 
       #actions {
@@ -90,11 +89,15 @@
       }
 
       function wireActions() {
-        root.querySelectorAll("[data-action]").forEach((button) => {
-          button.addEventListener("click", function () {
-            iina.postMessage("action", { action: button.dataset.action });
-          });
-        });
+        root.onclick = function (event) {
+          const button = event.target.closest("[data-action]");
+          if (!button) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          iina.postMessage("action", button.dataset.action);
+        };
       }
 
       function render(payload) {
