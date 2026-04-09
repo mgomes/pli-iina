@@ -56,7 +56,7 @@ function getAPIBase(callback) {
 
 function parseHTTPData(response) {
   if (!response) return null;
-  if (response.data !== undefined) return response.data;
+  if (response.data !== undefined && response.data !== null) return response.data;
   if (typeof response.text === "string" && response.text.length > 0) {
     try {
       return JSON.parse(response.text);
