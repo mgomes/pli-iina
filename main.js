@@ -96,9 +96,12 @@ function normalizeNextItem(item) {
     return null;
   }
 
+  const ratingKey =
+    typeof item.rating_key === "string" || typeof item.rating_key === "number" ? String(item.rating_key) : "";
+
   return {
     title: typeof item.title === "string" ? item.title : "",
-    ratingKey: typeof item.rating_key === "string" ? item.rating_key : "",
+    ratingKey: ratingKey,
     streamURL: item.stream_url,
     durationMs: Number(item.duration_ms || 0),
     viewOffsetMs: Number(item.view_offset_ms || 0),
