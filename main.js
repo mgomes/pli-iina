@@ -3,6 +3,7 @@ const { core, event, http, console, overlay } = iina;
 const REPORT_INTERVAL = 10000;
 const OVERLAY_INTERVAL = 500;
 const NEXT_EPISODE_THRESHOLD_MS = 30000;
+const RESUME_SEEK_GRACE_MS = 3000;
 
 let session = null;
 let reportTimer = null;
@@ -119,9 +120,18 @@ function getCurrentPositionMs() {
   if (session && session.resumePositionMs > 0) {
     if (observedPositionMs >= session.resumePositionMs) {
       session.resumePositionMs = 0;
+      session.resumeRequestedAtMs = 0;
     } else {
-      lastPosition = session.resumePositionMs;
-      return lastPosition;
+      const resumeGraceExpired =
+        observedPositionMs > 0 &&
+        session.resumeRequestedAtMs > 0 &&
+        Date.now() - session.resumeRequestedAtMs >= RESUME_SEEK_GRACE_MS;
+      if (!resumeGraceExpired) {
+        lastPosition = session.resumePositionMs;
+        return lastPosition;
+      }
+      session.resumePositionMs = 0;
+      session.resumeRequestedAtMs = 0;
     }
   }
 
@@ -189,6 +199,7 @@ function startTracking(ratingKey, durationMs, callback, startMs) {
     markers: [],
     next: null,
     resumePositionMs: startMs > 0 ? startMs : 0,
+    resumeRequestedAtMs: startMs > 0 ? Date.now() : 0,
   };
   lastPosition = startMs > 0 ? startMs : 0;
 
