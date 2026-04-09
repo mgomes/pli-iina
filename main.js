@@ -47,23 +47,86 @@ function getParam(url, name) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-function getPlayerContextURL(callback) {
-  try {
-    const url = new URL(callback);
-    const pathname = url.pathname || "";
-    if (pathname.endsWith("/timeline")) {
-      url.pathname = pathname.slice(0, -"/timeline".length) + "/player/context";
-    } else {
-      const lastSlash = pathname.lastIndexOf("/");
-      const basePath = lastSlash >= 0 ? pathname.slice(0, lastSlash + 1) : "/";
-      url.pathname = basePath + "player/context";
-    }
-    url.search = "";
-    url.hash = "";
-    return url.toString();
-  } catch (_) {
+function splitURL(url) {
+  if (typeof url !== "string" || url.length === 0) {
     return null;
   }
+
+  const hashIndex = url.indexOf("#");
+  const hash = hashIndex >= 0 ? url.slice(hashIndex) : "";
+  const withoutHash = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+  const queryIndex = withoutHash.indexOf("?");
+
+  return {
+    base: queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash,
+    query: queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : "",
+    hash: hash,
+  };
+}
+
+function getPlayerContextURL(callback) {
+  const parts = splitURL(callback);
+  if (!parts) {
+    return null;
+  }
+
+  const base = parts.base;
+  if (base.endsWith("/timeline")) {
+    return base.slice(0, -"/timeline".length) + "/player/context";
+  }
+
+  const lastSlash = base.lastIndexOf("/");
+  if (lastSlash < 0) {
+    return null;
+  }
+
+  return base.slice(0, lastSlash + 1) + "player/context";
+}
+
+function decodeQueryComponent(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (_) {
+    return value;
+  }
+}
+
+function buildURLWithQuery(url, updates) {
+  const parts = splitURL(url);
+  if (!parts) {
+    return null;
+  }
+
+  const nextEntries = [];
+  const overriddenKeys = Object.keys(updates);
+  if (parts.query.length > 0) {
+    const entries = parts.query.split("&");
+    for (let i = 0; i < entries.length; i += 1) {
+      const entry = entries[i];
+      if (!entry) {
+        continue;
+      }
+      const separatorIndex = entry.indexOf("=");
+      const rawKey = separatorIndex >= 0 ? entry.slice(0, separatorIndex) : entry;
+      const key = decodeQueryComponent(rawKey);
+      if (overriddenKeys.indexOf(key) >= 0) {
+        continue;
+      }
+      nextEntries.push(entry);
+    }
+  }
+
+  for (let i = 0; i < overriddenKeys.length; i += 1) {
+    const key = overriddenKeys[i];
+    const value = updates[key];
+    if (value === null || value === undefined) {
+      continue;
+    }
+    nextEntries.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(value)));
+  }
+
+  const query = nextEntries.length > 0 ? "?" + nextEntries.join("&") : "";
+  return parts.base + query + parts.hash;
 }
 
 function parseHTTPData(response) {
@@ -205,11 +268,13 @@ function stopTracking() {
 function startTracking(ratingKey, durationMs, callback, startMs) {
   stopTracking();
 
+  const contextURL = getPlayerContextURL(callback);
+
   session = {
     ratingKey: ratingKey,
     durationMs: durationMs,
     callback: callback,
-    contextURL: getPlayerContextURL(callback),
+    contextURL: contextURL,
     markers: [],
     next: null,
     resumePositionMs: startMs > 0 ? startMs : 0,
@@ -229,6 +294,9 @@ function startTracking(ratingKey, durationMs, callback, startMs) {
   }, OVERLAY_INTERVAL);
 
   updateOverlay();
+  if (!contextURL) {
+    console.log("pli: unable to derive player context URL from callback", callback);
+  }
   void refreshPlayerContext();
 }
 
@@ -364,21 +432,19 @@ function skipMarker(type, message) {
 function buildTrackedPlaybackURL(item) {
   if (!session || !item || !item.streamURL) return null;
 
-  try {
-    const playbackURL = new URL(item.streamURL);
-    if (item.ratingKey) {
-      playbackURL.searchParams.set("X-Pli-Rating-Key", item.ratingKey);
-    }
-    if (item.durationMs > 0) {
-      playbackURL.searchParams.set("X-Pli-Duration", String(item.durationMs));
-    }
-    playbackURL.searchParams.set("X-Pli-Start", String(item.viewOffsetMs || 0));
-    playbackURL.searchParams.set("X-Pli-Callback", session.callback);
-    playbackURL.searchParams.set("X-Pli-Session", String(Date.now()));
-    return playbackURL.toString();
-  } catch (_) {
-    return null;
+  const updates = {
+    "X-Pli-Start": item.viewOffsetMs || 0,
+    "X-Pli-Callback": session.callback,
+    "X-Pli-Session": Date.now(),
+  };
+  if (item.ratingKey) {
+    updates["X-Pli-Rating-Key"] = item.ratingKey;
   }
+  if (item.durationMs > 0) {
+    updates["X-Pli-Duration"] = item.durationMs;
+  }
+
+  return buildURLWithQuery(item.streamURL, updates);
 }
 
 function playNextEpisode() {
