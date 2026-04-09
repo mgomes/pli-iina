@@ -126,7 +126,6 @@ function getCurrentPositionMs() {
       session.resumeRequestedAtMs = 0;
     } else {
       const resumeGraceExpired =
-        observedPositionMs > 0 &&
         session.resumeRequestedAtMs > 0 &&
         Date.now() - session.resumeRequestedAtMs >= RESUME_SEEK_GRACE_MS;
       if (!resumeGraceExpired) {
@@ -135,6 +134,7 @@ function getCurrentPositionMs() {
       }
       session.resumePositionMs = 0;
       session.resumeRequestedAtMs = 0;
+      lastPosition = observedPositionMs;
     }
   }
 
