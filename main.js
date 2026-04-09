@@ -10,10 +10,16 @@ let overlayTimer = null;
 let lastPosition = 0;
 let lastOverlayState = "";
 let overlayVisible = false;
-
-initializeOverlay();
+let overlayInitialized = false;
+let overlayLoaded = false;
 
 function initializeOverlay() {
+  if (overlayInitialized) {
+    return;
+  }
+
+  overlayInitialized = true;
+  overlayLoaded = false;
   overlay.loadFile("overlay.html");
   overlay.setOpacity(1);
   overlay.setClickable(false);
@@ -143,6 +149,11 @@ function report(state, preservePosition) {
 }
 
 function hideOverlay() {
+  if (!overlayInitialized) {
+    overlayVisible = false;
+    return;
+  }
+
   overlay.setClickable(false);
   if (overlayVisible) {
     overlay.hide();
@@ -289,6 +300,10 @@ function buildOverlayPayload() {
 }
 
 function updateOverlay() {
+  if (!overlayInitialized || !overlayLoaded) {
+    return;
+  }
+
   const payload = buildOverlayPayload();
   const nextOverlayState = JSON.stringify(payload);
   if (nextOverlayState === lastOverlayState) {
@@ -351,6 +366,17 @@ function playNextEpisode() {
   core.open(nextURL);
 }
 
+event.on("iina.window-loaded", function () {
+  initializeOverlay();
+  updateOverlay();
+});
+
+event.on("iina.plugin-overlay-loaded", function () {
+  overlayLoaded = true;
+  lastOverlayState = "";
+  updateOverlay();
+});
+
 event.on("iina.file-loaded", function (url) {
   const ratingKey = getParam(url, "X-Pli-Rating-Key");
   const callback = getParam(url, "X-Pli-Callback");
@@ -380,4 +406,7 @@ event.on("mpv.end-file", function () {
 
 event.on("iina.window-will-close", function () {
   stopTracking();
+  overlayInitialized = false;
+  overlayLoaded = false;
+  lastOverlayState = "";
 });
