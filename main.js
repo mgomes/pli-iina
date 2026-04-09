@@ -47,9 +47,9 @@ function getParam(url, name) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-function getAPIBase(callback) {
+function getPlayerContextURL(callback) {
   try {
-    return new URL(callback).origin;
+    return new URL("player/context", callback).toString();
   } catch (_) {
     return null;
   }
@@ -195,7 +195,7 @@ function startTracking(ratingKey, durationMs, callback, startMs) {
     ratingKey: ratingKey,
     durationMs: durationMs,
     callback: callback,
-    apiBase: getAPIBase(callback),
+    contextURL: getPlayerContextURL(callback),
     markers: [],
     next: null,
     resumePositionMs: startMs > 0 ? startMs : 0,
@@ -219,11 +219,11 @@ function startTracking(ratingKey, durationMs, callback, startMs) {
 }
 
 async function refreshPlayerContext() {
-  if (!session || !session.apiBase) return;
+  if (!session || !session.contextURL) return;
 
   const ratingKey = session.ratingKey;
   try {
-    const response = await http.get(session.apiBase + "/api/player/context", {
+    const response = await http.get(session.contextURL, {
       headers: { Accept: "application/json" },
       params: { rating_key: ratingKey },
     });
