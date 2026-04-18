@@ -26,6 +26,7 @@ function initializeOverlay() {
   overlayLoaded = false;
   overlay.loadFile("overlay.html");
   overlay.onMessage("action", function (payload) {
+    console.log("pli: overlay message", JSON.stringify(payload));
     const action = payload && typeof payload === "object" ? payload.action : payload;
     if (action === "skip-intro") {
       skipMarker("intro", "Skipped intro");
@@ -493,6 +494,7 @@ function buildTrackedPlaybackURL(item) {
 }
 
 function playNextEpisode() {
+  console.log("pli: playNextEpisode", session && session.next ? "has next" : "no next");
   if (!session || !session.next) return;
 
   const nextURL = buildTrackedPlaybackURL(session.next);
