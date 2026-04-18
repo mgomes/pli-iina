@@ -15,6 +15,21 @@ let overlayInitialized = false;
 let overlayLoaded = false;
 let lastDisplayTitle = "";
 
+function handleOverlayAction(payload) {
+  const action = payload && typeof payload === "object" ? payload.action : payload;
+  if (action === "skip-intro") {
+    skipMarker("intro", "Skipped intro");
+    return;
+  }
+  if (action === "skip-credits") {
+    skipMarker("credits", "Skipped credits");
+    return;
+  }
+  if (action === "next-episode") {
+    playNextEpisode();
+  }
+}
+
 function initializeOverlay() {
   if (overlayInitialized) {
     return;
@@ -25,21 +40,6 @@ function initializeOverlay() {
   overlay.hide();
   overlayLoaded = false;
   overlay.loadFile("overlay.html");
-  overlay.onMessage("action", function (payload) {
-    console.log("pli: overlay message", JSON.stringify(payload));
-    const action = payload && typeof payload === "object" ? payload.action : payload;
-    if (action === "skip-intro") {
-      skipMarker("intro", "Skipped intro");
-      return;
-    }
-    if (action === "skip-credits") {
-      skipMarker("credits", "Skipped credits");
-      return;
-    }
-    if (action === "next-episode") {
-      playNextEpisode();
-    }
-  });
   overlayInitialized = true;
 }
 
@@ -494,7 +494,6 @@ function buildTrackedPlaybackURL(item) {
 }
 
 function playNextEpisode() {
-  console.log("pli: playNextEpisode", session && session.next ? "has next" : "no next");
   if (!session || !session.next) return;
 
   const nextURL = buildTrackedPlaybackURL(session.next);
@@ -513,6 +512,7 @@ event.on("iina.window-loaded", function () {
 event.on("iina.plugin-overlay-loaded", function () {
   overlayLoaded = true;
   lastOverlayState = "";
+  overlay.onMessage("action", handleOverlayAction);
   updateOverlay();
 });
 
