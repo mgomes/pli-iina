@@ -27,6 +27,7 @@ function initializeOverlay() {
   overlay.loadFile("overlay.html");
   overlay.onMessage("action", function (payload) {
     console.log("pli: overlay message", JSON.stringify(payload));
+    core.osd("pli msg: " + JSON.stringify(payload));
     const action = payload && typeof payload === "object" ? payload.action : payload;
     if (action === "skip-intro") {
       skipMarker("intro", "Skipped intro");

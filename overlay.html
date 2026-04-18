@@ -98,6 +98,9 @@
             event.preventDefault();
             event.stopPropagation();
             console.log("pli overlay: click", button.dataset.action);
+            const label = button.querySelector(".label");
+            if (label) label.textContent = "CLICKED";
+            button.style.background = "rgba(220, 60, 60, 0.95)";
             iina.postMessage("action", button.dataset.action);
           };
         });
