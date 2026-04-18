@@ -97,6 +97,7 @@
           button.onclick = function (event) {
             event.preventDefault();
             event.stopPropagation();
+            console.log("pli overlay: click", button.dataset.action);
             iina.postMessage("action", button.dataset.action);
           };
         });
