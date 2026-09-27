@@ -296,7 +296,7 @@ function stopTracking() {
   }
   hideOverlay();
   if (session) {
-    report("stopped", true);
+    report("stopped", false);
     session = null;
     lastPosition = 0;
   }
