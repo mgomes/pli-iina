@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.11
+
+- Report IINA's current playback position when playback stops.
+
 ## 1.1.10
 
 - Fix overlay buttons (Skip Intro, Skip Credits, Next Episode) after recent IINA update. Register `overlay.onMessage` inside `iina.plugin-overlay-loaded` instead of pre-load — IINA now drops listeners registered before the webview finishes loading.
