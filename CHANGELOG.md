@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.12
+
+- Fix Next Episode and the display title on IINA 1.5. IINA now requires the `file-system` permission for the mpv `loadfile` command and the `force-media-title` option, so the plugin declares it.
+
 ## 1.1.11
 
 - Report IINA's current playback position when playback stops.
