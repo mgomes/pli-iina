@@ -529,7 +529,7 @@ event.on("iina.file-loaded", function (url) {
   const displayTitle = getParam(url, "X-Pli-Display-Title");
   startTracking(ratingKey, durationMs, callback, startMs, displayTitle);
   if (startMs > 0) {
-    core.seek(startMs / 1000);
+    core.seekTo(startMs / 1000);
   }
 });
 
